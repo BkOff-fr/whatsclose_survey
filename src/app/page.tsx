@@ -1,26 +1,27 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import ChatSurvey from '@/components/Survey/ChatSurvey';
+import { Suspense } from 'react';
 
-// Dynamic imports for heavy components
-const AnimatedBackground = dynamic(
-  () => import('@/components/Background/AnimatedBackground'),
-  { ssr: false }
+// Dynamic import pour la scène 3D
+const WhatsCloseExperience = dynamic(
+  () => import('@/components/Experience/WhatsCloseExperience'),
+  { 
+    ssr: false,
+    loading: () => (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-green-400 text-2xl animate-pulse">Chargement de l'expérience...</div>
+      </div>
+    )
+  }
 );
-
-// Option: Use ThreeBackground instead for more advanced 3D effects
-// const ThreeBackground = dynamic(
-//   () => import('@/components/Background/ThreeBackground'),
-//   { ssr: false }
-// );
 
 export default function Home() {
   return (
-    <div className="min-h-screen relative flex flex-col">
-      <AnimatedBackground />
-      {/* Or use: <ThreeBackground /> */}
-      <ChatSurvey />
+    <div className="min-h-screen relative bg-black">
+      <Suspense fallback={<div className="min-h-screen bg-black" />}>
+        <WhatsCloseExperience />
+      </Suspense>
     </div>
   );
 }
