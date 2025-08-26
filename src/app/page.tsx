@@ -2,26 +2,23 @@
 
 import dynamic from 'next/dynamic';
 import { Suspense } from 'react';
+import LoadingScreen from '@/components/UI/LoadingScreen';
 
-// Dynamic import pour la scène 3D
+// Dynamic import avec loading personnalisé
 const WhatsCloseExperience = dynamic(
   () => import('@/components/Experience/WhatsCloseExperience'),
   { 
     ssr: false,
-    loading: () => (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-green-400 text-2xl animate-pulse">Chargement de l'expérience...</div>
-      </div>
-    )
+    loading: () => <LoadingScreen />
   }
 );
 
 export default function Home() {
   return (
-    <div className="min-h-screen relative bg-black">
-      <Suspense fallback={<div className="min-h-screen bg-black" />}>
+    <main className="min-h-screen relative bg-black overflow-hidden">
+      <Suspense fallback={<LoadingScreen />}>
         <WhatsCloseExperience />
       </Suspense>
-    </div>
+    </main>
   );
 }

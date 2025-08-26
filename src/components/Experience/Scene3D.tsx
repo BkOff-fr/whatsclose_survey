@@ -1,85 +1,177 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { 
-  OrbitControls, 
   Float,
   MeshReflectorMaterial,
-  PerspectiveCamera,
-  Sparkles,
+  Text,
   Cloud,
   Stars,
-  Text
+  Ring,
+  Html,
+  Sparkles
 } from '@react-three/drei';
 import * as THREE from 'three';
 
 interface Scene3DProps {
-  onInteraction: (type: string) => void;
+  mode: 'chat' | 'story';
 }
 
-function LocalMarket({ position, onClick }: any) {
+// Floating Particles System
+function FloatingParticles() {
+  const points = useRef<THREE.Points>(null);
+  const particlesCount = 500;
+  
+  const positions = new Float32Array(particlesCount * 3);
+  for(let i = 0; i < particlesCount; i++) {
+    positions[i * 3] = (Math.random() - 0.5) * 50;
+    positions[i * 3 + 1] = Math.random() * 20;
+    positions[i * 3 + 2] = (Math.random() - 0.5) * 50;
+  }
+
+  useFrame((state) => {
+    if(points.current) {
+      points.current.rotation.y = state.clock.elapsedTime * 0.02;
+      points.current.position.y = Math.sin(state.clock.elapsedTime * 0.3) * 0.5;
+    }
+  });
+
+  return (
+    <points ref={points}>
+      <bufferGeometry>
+        <bufferAttribute
+          attach="attributes-position"
+          args={[positions, 3]}
+        />
+      </bufferGeometry>
+      <pointsMaterial 
+        size={0.05} 
+        color="#4ade80" 
+        transparent 
+        opacity={0.6}
+        sizeAttenuation
+        blending={THREE.AdditiveBlending}
+      />
+    </points>
+  );
+}
+
+// Ambient Environment
+function AmbientEnvironment() {
+  return (
+    <>
+      <Stars radius={100} depth={50} count={3000} factor={4} saturation={0} fade speed={1} />
+      <Cloud
+        position={[-20, 10, -30]}
+        opacity={0.3}
+        speed={0.2}
+        color="#4ade80"
+      />
+      <Cloud
+        position={[20, 15, -40]}
+        opacity={0.2}
+        speed={0.1}
+        color="#22c55e"
+      />
+      <Cloud
+        position={[0, 20, -50]}
+        opacity={0.15}
+        speed={0.15}
+        color="#10b981"
+      />
+      <FloatingParticles />
+      <Sparkles count={200} scale={50} size={2} speed={0.5} color="#4ade80" opacity={0.5} />
+    </>
+  );
+}
+
+// Scene 1: Local Market
+function SceneMarket({ position }: { position: [number, number, number] }) {
   const meshRef = useRef<THREE.Group>(null);
   const [hovered, setHovered] = useState(false);
   
   useFrame((state) => {
     if (meshRef.current) {
-      meshRef.current.rotation.y += 0.005;
-      meshRef.current.position.y = position[1] + Math.sin(state.clock.elapsedTime) * 0.1;
+      meshRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.5) * 0.1;
+      meshRef.current.position.y = position[1] + Math.sin(state.clock.elapsedTime) * 0.2;
     }
   });
 
   return (
-    <Float speed={2} rotationIntensity={0.5} floatIntensity={0.5}>
+    <Float speed={1.5} rotationIntensity={0.2} floatIntensity={0.3}>
       <group 
         ref={meshRef} 
         position={position}
-        onClick={onClick}
         onPointerOver={() => setHovered(true)}
         onPointerOut={() => setHovered(false)}
       >
-        {/* Market Stand */}
-        <mesh castShadow>
-          <boxGeometry args={[2, 0.1, 1.5]} />
-          <meshStandardMaterial color="#8B4513" />
+        {/* Market Stand Base */}
+        <mesh castShadow receiveShadow>
+          <boxGeometry args={[6, 0.2, 4]} />
+          <meshStandardMaterial 
+            color="#2a2a2a" 
+            metalness={0.3} 
+            roughness={0.7}
+          />
         </mesh>
         
-        {/* Roof */}
-        <mesh position={[0, 1.5, 0]} castShadow>
-          <coneGeometry args={[1.5, 1, 4]} />
-          <meshStandardMaterial color="#ff6b6b" />
+        {/* Market Roof */}
+        <mesh position={[0, 3, 0]} castShadow>
+          <coneGeometry args={[3.5, 3, 4]} />
+          <meshStandardMaterial 
+            color="#ff6b6b" 
+            emissive="#ff6b6b" 
+            emissiveIntensity={0.1}
+          />
         </mesh>
         
-        {/* Products */}
-        <mesh position={[-0.5, 0.3, 0]} castShadow>
-          <sphereGeometry args={[0.15, 16, 16]} />
-          <meshStandardMaterial color="#ff9f43" />
-        </mesh>
-        <mesh position={[0, 0.3, 0.2]} castShadow>
-          <sphereGeometry args={[0.12, 16, 16]} />
-          <meshStandardMaterial color="#10ac84" />
-        </mesh>
-        <mesh position={[0.5, 0.3, -0.1]} castShadow>
-          <boxGeometry args={[0.2, 0.2, 0.2]} />
-          <meshStandardMaterial color="#ee5a6f" />
-        </mesh>
+        {/* Product Displays */}
+        {[
+          { pos: [-1.5, 0.5, 0], color: '#ff9f43', scale: 1 },
+          { pos: [0, 0.5, 0.5], color: '#10ac84', scale: 0.8 },
+          { pos: [1.5, 0.5, -0.3], color: '#ee5a6f', scale: 0.9 },
+          { pos: [-0.8, 0.5, -0.8], color: '#f368e0', scale: 0.7 },
+          { pos: [0.8, 0.5, 0.8], color: '#48dbfb', scale: 0.75 }
+        ].map((item, i) => (
+          <mesh key={i} position={item.pos as [number, number, number]} castShadow>
+            <boxGeometry args={[0.6 * item.scale, 0.6 * item.scale, 0.6 * item.scale]} />
+            <meshStandardMaterial 
+              color={item.color}
+              emissive={item.color}
+              emissiveIntensity={hovered ? 0.2 : 0.05}
+            />
+          </mesh>
+        ))}
         
-        {/* Label */}
-        <Text
-          position={[0, 2.2, 0]}
-          fontSize={0.3}
-          color="#ffffff"
-          anchorX="center"
-          anchorY="middle"
-        >
-          Producteur Local
-        </Text>
+        {/* Floating Label */}
+        <Float speed={2} floatIntensity={0.5}>
+          <Text 
+            position={[0, 5, 0]} 
+            fontSize={0.5} 
+            color="#ffffff" 
+            anchorX="center"
+            font="/fonts/inter-bold.woff"
+          >
+            Producteurs Locaux
+            <meshStandardMaterial
+              color="#ffffff"
+              emissive="#4ade80"
+              emissiveIntensity={0.2}
+            />
+          </Text>
+        </Float>
         
-        {/* Hover effect */}
+        {/* Hover Glow Effect */}
         {hovered && (
-          <mesh scale={[3, 3, 3]} rotation={[-Math.PI / 2, 0, 0]}>
-            <ringGeometry args={[0.9, 1, 32]} />
-            <meshBasicMaterial color="#4ade80" opacity={0.5} transparent />
+          <mesh scale={[8, 0.1, 6]} position={[0, -0.1, 0]}>
+            <planeGeometry />
+            <meshBasicMaterial 
+              color="#4ade80" 
+              opacity={0.3} 
+              transparent 
+              blending={THREE.AdditiveBlending}
+            />
           </mesh>
         )}
       </group>
@@ -87,78 +179,90 @@ function LocalMarket({ position, onClick }: any) {
   );
 }
 
-function SmartLocker({ position }: any) {
-  const meshRef = useRef<THREE.Group>(null);
-  const [activeLocker, setActiveLocker] = useState<number | null>(null);
-  
+// Scene 2: Smart Locker
+function SceneLocker({ position }: { position: [number, number, number] }) {
+  const groupRef = useRef<THREE.Group>(null);
+  const [activeLockers, setActiveLockers] = useState<number[]>([]);
+
   useFrame((state) => {
-    if (meshRef.current) {
-      const scale = 1 + Math.sin(state.clock.elapsedTime * 2) * 0.02;
-      meshRef.current.scale.set(scale, scale, scale);
+    if (groupRef.current) {
+      groupRef.current.position.y = position[1] + Math.sin(state.clock.elapsedTime * 0.5) * 0.1;
     }
   });
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const newActive = Array.from({ length: 3 }, () => Math.floor(Math.random() * 12));
+      setActiveLockers(newActive);
+    }, 2000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
-    <group ref={meshRef} position={position}>
-      {/* Locker Body */}
+    <group ref={groupRef} position={position}>
+      {/* Main Structure */}
       <mesh castShadow receiveShadow>
-        <boxGeometry args={[3, 4, 2]} />
-        <meshStandardMaterial color="#2c3e50" metalness={0.8} roughness={0.2} />
+        <boxGeometry args={[8, 10, 4]} />
+        <meshStandardMaterial 
+          color="#1a1a2e" 
+          metalness={0.9} 
+          roughness={0.1}
+        />
       </mesh>
       
-      {/* Locker Doors Grid */}
+      {/* Locker Grid */}
       {[...Array(12)].map((_, i) => {
         const row = Math.floor(i / 3);
         const col = i % 3;
-        const isActive = activeLocker === i;
+        const isActive = activeLockers.includes(i);
         
         return (
-          <group key={i} onClick={() => setActiveLocker(isActive ? null : i)}>
-            <mesh position={[-0.9 + col * 0.9, 1.3 - row * 0.9, 1.01]} castShadow>
-              <boxGeometry args={[0.8, 0.8, 0.05]} />
+          <group key={i}>
+            <mesh position={[-2.5 + col * 2.5, 3 - row * 2, 2.1]} castShadow>
+              <boxGeometry args={[2, 1.8, 0.1]} />
               <meshStandardMaterial 
-                color={isActive ? "#4ade80" : "#34495e"} 
-                metalness={0.6} 
-                roughness={0.3}
+                color={isActive ? "#4ade80" : "#0f172a"}
                 emissive={isActive ? "#4ade80" : "#000000"}
-                emissiveIntensity={isActive ? 0.2 : 0}
+                emissiveIntensity={isActive ? 0.3 : 0}
+                metalness={0.7}
+                roughness={0.3}
               />
             </mesh>
             {/* Handle */}
-            <mesh position={[-0.6 + col * 0.9, 1.3 - row * 0.9, 1.05]}>
-              <boxGeometry args={[0.2, 0.05, 0.05]} />
+            <mesh position={[-2.5 + col * 2.5 + 0.7, 3 - row * 2, 2.2]}>
+              <boxGeometry args={[0.4, 0.08, 0.08]} />
               <meshStandardMaterial color="#95a5a6" metalness={0.9} />
             </mesh>
-            {/* Number */}
-            <Text
-              position={[-0.9 + col * 0.9, 1.3 - row * 0.9, 1.08]}
-              fontSize={0.15}
-              color="white"
-              anchorX="center"
-              anchorY="middle"
-            >
-              {(i + 1).toString().padStart(2, '0')}
-            </Text>
           </group>
         );
       })}
       
-      {/* Screen */}
-      <mesh position={[0, 0, 1.02]}>
-        <planeGeometry args={[2, 0.5]} />
-        <meshBasicMaterial color="#3498db" />
+      {/* Digital Screen */}
+      <mesh position={[0, 0, 2.05]}>
+        <planeGeometry args={[6, 1]} />
+        <meshBasicMaterial color="#3498db">
+          <Html transform occlude position={[0, 0, 0.01]}>
+            <div className="w-48 h-8 bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center rounded">
+              <span className="text-white font-bold text-xs">INTERFACE DIGITALE</span>
+            </div>
+          </Html>
+        </meshBasicMaterial>
       </mesh>
       
       {/* 24/7 Sign */}
-      <Float speed={3} floatIntensity={0.2}>
-        <group position={[0, 2.5, 0]}>
+      <Float speed={2} floatIntensity={0.5}>
+        <group position={[0, 6, 0]}>
           <mesh>
-            <boxGeometry args={[1.2, 0.4, 0.1]} />
-            <meshBasicMaterial color="#e74c3c" />
+            <boxGeometry args={[2, 0.8, 0.2]} />
+            <meshStandardMaterial 
+              color="#e74c3c"
+              emissive="#e74c3c"
+              emissiveIntensity={0.3}
+            />
           </mesh>
           <Text
-            position={[0, 0, 0.06]}
-            fontSize={0.25}
+            position={[0, 0, 0.11]}
+            fontSize={0.5}
             color="white"
             anchorX="center"
             anchorY="middle"
@@ -168,116 +272,205 @@ function SmartLocker({ position }: any) {
         </group>
       </Float>
       
-      {/* Label */}
-      <Text
-        position={[0, -2.5, 0]}
-        fontSize={0.3}
-        color="#4ade80"
-        anchorX="center"
-        anchorY="middle"
-      >
+      <Text position={[0, -6, 0]} fontSize={0.4} color="#ffffff" anchorX="center">
         Casiers Intelligents
+        <meshStandardMaterial
+          color="#ffffff"
+          emissive="#4ade80"
+          emissiveIntensity={0.2}
+        />
       </Text>
     </group>
   );
 }
 
-function DeliveryPath() {
-  const points = [];
-  for (let i = 0; i <= 50; i++) {
-    const t = i / 50;
-    const x = Math.sin(t * Math.PI * 2) * 5;
-    const z = Math.cos(t * Math.PI * 2) * 5;
-    points.push(new THREE.Vector3(x, 0.1, z));
-  }
-  
-  const lineGeometry = new THREE.BufferGeometry().setFromPoints(points);
-  
-  return (
-    <line geometry={lineGeometry}>
-      <lineBasicMaterial color="#4ade80" opacity={0.6} transparent />
-    </line>
-  );
-}
-
-function AnimatedProduct({ delay = 0 }: { delay?: number }) {
-  const meshRef = useRef<THREE.Mesh>(null);
-  const [progress, setProgress] = useState(0);
+// Scene 3: Delivery System
+function SceneDelivery({ position }: { position: [number, number, number] }) {
+  const truckRef = useRef<THREE.Mesh>(null);
+  const packageRefs = useRef<THREE.Mesh[]>([]);
   
   useFrame((state) => {
-    const time = state.clock.elapsedTime + delay;
-    const t = (time * 0.2) % 1;
-    setProgress(t);
-    
-    if (meshRef.current) {
-      const x = Math.sin(t * Math.PI * 2) * 5;
-      const z = Math.cos(t * Math.PI * 2) * 5;
-      meshRef.current.position.set(x, 0.5, z);
-      meshRef.current.rotation.y = time;
+    if (truckRef.current) {
+      const t = state.clock.elapsedTime * 0.3;
+      truckRef.current.position.x = Math.sin(t) * 8;
+      truckRef.current.position.z = Math.cos(t) * 8;
+      truckRef.current.rotation.y = -t + Math.PI / 2;
     }
+    
+    packageRefs.current.forEach((ref, i) => {
+      if (ref) {
+        const offset = (i * Math.PI * 2) / 3;
+        const t = state.clock.elapsedTime * 0.5 + offset;
+        ref.position.x = Math.sin(t) * 5;
+        ref.position.z = Math.cos(t) * 5;
+        ref.rotation.y = t;
+      }
+    });
   });
-  
+
   return (
-    <mesh ref={meshRef} castShadow>
-      <boxGeometry args={[0.3, 0.3, 0.3]} />
-      <meshStandardMaterial 
-        color={progress < 0.5 ? "#ff9f43" : "#4ade80"} 
-        emissive={progress > 0.8 ? "#4ade80" : "#000000"}
-        emissiveIntensity={0.2}
-      />
-    </mesh>
+    <group position={position}>
+      {/* Delivery Truck */}
+      <mesh ref={truckRef} castShadow position={[0, 1, 0]}>
+        <boxGeometry args={[3, 2, 1.5]} />
+        <meshStandardMaterial 
+          color="#3b82f6" 
+          metalness={0.6} 
+          roughness={0.4}
+        />
+      </mesh>
+      
+      {/* Packages */}
+      {[0, 1, 2].map((i) => (
+        <mesh
+          key={i}
+          ref={(el) => {
+            if (el) packageRefs.current[i] = el;
+          }}
+          position={[0, 0.5, 0]}
+          castShadow
+        >
+          <boxGeometry args={[0.8, 0.8, 0.8]} />
+          <meshStandardMaterial 
+            color="#f59e0b"
+            emissive="#f59e0b"
+            emissiveIntensity={0.1}
+          />
+        </mesh>
+      ))}
+      
+      {/* Delivery Path */}
+      <Ring 
+        args={[7, 9, 64]} 
+        rotation={[-Math.PI / 2, 0, 0]} 
+        position={[0, 0.1, 0]}
+      >
+        <meshBasicMaterial 
+          color="#4ade80" 
+          opacity={0.3} 
+          transparent
+          blending={THREE.AdditiveBlending}
+        />
+      </Ring>
+      
+      <Ring 
+        args={[4.5, 5.5, 64]} 
+        rotation={[-Math.PI / 2, 0, 0]} 
+        position={[0, 0.1, 0]}
+      >
+        <meshBasicMaterial 
+          color="#22c55e" 
+          opacity={0.2} 
+          transparent
+          blending={THREE.AdditiveBlending}
+        />
+      </Ring>
+      
+      <Text position={[0, 4, 0]} fontSize={0.5} color="#ffffff" anchorX="center">
+        Livraison Express
+        <meshStandardMaterial
+          color="#ffffff"
+          emissive="#4ade80"
+          emissiveIntensity={0.2}
+        />
+      </Text>
+    </group>
   );
 }
 
-function CentralLogo() {
+// Scene 4: Mobile App
+function SceneApp({ position }: { position: [number, number, number] }) {
+  const phoneRef = useRef<THREE.Group>(null);
+  const [screenActive, setScreenActive] = useState(true);
+  
+  useFrame((state) => {
+    if (phoneRef.current) {
+      phoneRef.current.rotation.y = Math.sin(state.clock.elapsedTime) * 0.2;
+      phoneRef.current.rotation.z = Math.sin(state.clock.elapsedTime * 0.7) * 0.1;
+    }
+  });
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setScreenActive(prev => !prev);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
-    <Float speed={1.5} rotationIntensity={0.3} floatIntensity={0.5}>
-      <group position={[0, 3, 0]}>
-        <Text
-          fontSize={1.5}
-          color="#4ade80"
-          anchorX="center"
-          anchorY="middle"
-        >
-          WhatsClose
-          <meshStandardMaterial
-            color="#4ade80"
-            metalness={0.3}
-            roughness={0.4}
-            emissive="#4ade80"
-            emissiveIntensity={0.1}
+    <Float speed={1.5} rotationIntensity={0.5} floatIntensity={0.5}>
+      <group ref={phoneRef} position={position}>
+        {/* Phone Body */}
+        <mesh castShadow>
+          <boxGeometry args={[3, 6, 0.3]} />
+          <meshStandardMaterial 
+            color="#000000" 
+            metalness={0.9} 
+            roughness={0.1}
           />
-        </Text>
-        <Text
-          position={[0, -0.5, 0]}
-          fontSize={0.3}
-          color="#ffffff"
-          anchorX="center"
-          anchorY="middle"
-        >
-          Le local à portée de main
+        </mesh>
+        
+        {/* Screen */}
+        <mesh position={[0, 0, 0.16]}>
+          <planeGeometry args={[2.7, 5.7]} />
+          <meshStandardMaterial 
+            color={screenActive ? "#4ade80" : "#1f2937"}
+            emissive={screenActive ? "#4ade80" : "#000000"}
+            emissiveIntensity={screenActive ? 0.2 : 0}
+          />
+        </mesh>
+        
+        {/* UI Elements */}
+        <Html position={[0, 0, 0.2]} transform occlude>
+          <div className={`w-32 h-64 rounded-lg p-4 flex flex-col items-center justify-center transition-all ${
+            screenActive ? 'bg-gradient-to-b from-green-400 to-green-600' : 'bg-gray-800'
+          }`}>
+            <div className="text-white text-center">
+              <div className="text-2xl font-bold mb-2">WhatsClose</div>
+              <div className="text-xs mb-4">Commandez en 2 clics</div>
+              {screenActive && (
+                <div className="space-y-2">
+                  <div className="bg-white/20 rounded p-2 text-xs">🥬 Légumes frais</div>
+                  <div className="bg-white/20 rounded p-2 text-xs">🥖 Pain artisanal</div>
+                  <div className="bg-white/20 rounded p-2 text-xs">🧀 Fromages locaux</div>
+                </div>
+              )}
+            </div>
+          </div>
+        </Html>
+        
+        {/* Notification Badge */}
+        {screenActive && (
+          <Float speed={3} floatIntensity={1}>
+            <mesh position={[1.2, 2.5, 0.5]}>
+              <sphereGeometry args={[0.2, 16, 16]} />
+              <meshStandardMaterial 
+                color="#ef4444"
+                emissive="#ef4444"
+                emissiveIntensity={0.5}
+              />
+            </mesh>
+          </Float>
+        )}
+        
+        <Text position={[0, 4, 0]} fontSize={0.5} color="#ffffff" anchorX="center">
+          Application Mobile
+          <meshStandardMaterial
+            color="#ffffff"
+            emissive="#4ade80"
+            emissiveIntensity={0.2}
+          />
         </Text>
       </group>
     </Float>
   );
 }
 
-export default function Scene3D({ onInteraction }: Scene3DProps) {
+export default function Scene3D({ mode }: Scene3DProps) {
   return (
     <>
-      <PerspectiveCamera makeDefault position={[0, 8, 15]} />
-      <OrbitControls 
-        enablePan={true} 
-        enableZoom={true} 
-        enableRotate={true}
-        maxPolarAngle={Math.PI / 2.2}
-        minDistance={5}
-        maxDistance={25}
-        autoRotate
-        autoRotateSpeed={0.5}
-      />
-      
-      <ambientLight intensity={0.5} />
+      {/* Lighting */}
+      <ambientLight intensity={0.3} />
       <directionalLight 
         position={[10, 10, 5]} 
         intensity={1} 
@@ -286,51 +479,34 @@ export default function Scene3D({ onInteraction }: Scene3DProps) {
         shadow-mapSize-height={2048}
       />
       <pointLight position={[-10, 10, -5]} intensity={0.5} color="#4ade80" />
-      <pointLight position={[0, 5, 0]} intensity={0.3} color="#ffffff" />
+      <pointLight position={[10, 10, -5]} intensity={0.5} color="#22c55e" />
+      <pointLight position={[0, 15, 0]} intensity={0.3} color="#ffffff" />
       
-      {/* Sky and environment */}
-      <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade />
-      <Cloud position={[-10, 10, -10]} opacity={0.5} speed={0.4} width={10} depth={1.5} segments={20} />
-      <Cloud position={[10, 12, -15]} opacity={0.4} speed={0.2} width={8} depth={1} segments={15} />
+      {/* Environment */}
+      <AmbientEnvironment />
+      
+      {/* Scene Elements */}
+      <SceneMarket position={[-15, 0, -10]} />
+      <SceneLocker position={[15, 0, -10]} />
+      <SceneDelivery position={[0, 0, -30]} />
+      <SceneApp position={[0, 0, 10]} />
       
       {/* Ground */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.5, 0]} receiveShadow>
-        <planeGeometry args={[50, 50]} />
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -2, 0]} receiveShadow>
+        <planeGeometry args={[100, 100]} />
         <MeshReflectorMaterial
           blur={[300, 100]}
           resolution={2048}
           mixBlur={1}
-          mixStrength={40}
+          mixStrength={80}
           roughness={1}
           depthScale={1.2}
           minDepthThreshold={0.4}
           maxDepthThreshold={1.4}
-          color="#1a1a1a"
-          metalness={0.5}
+          color="#0a0a0a"
+          metalness={0.8}
         />
       </mesh>
-      
-      {/* Central Logo */}
-      <CentralLogo />
-      
-      {/* Markets */}
-      <LocalMarket position={[-8, 0, -5]} onClick={() => onInteraction('market')} />
-      <LocalMarket position={[8, 0, -5]} onClick={() => onInteraction('market')} />
-      <LocalMarket position={[0, 0, -8]} onClick={() => onInteraction('market')} />
-      
-      {/* Smart Locker */}
-      <SmartLocker position={[0, 0, 5]} />
-      
-      {/* Delivery Path */}
-      <DeliveryPath />
-      
-      {/* Animated Products */}
-      <AnimatedProduct delay={0} />
-      <AnimatedProduct delay={1} />
-      <AnimatedProduct delay={2} />
-      
-      {/* Sparkles for magical effect */}
-      <Sparkles count={200} scale={20} size={3} speed={0.5} color="#4ade80" />
     </>
   );
 }

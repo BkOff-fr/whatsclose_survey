@@ -1,8 +1,16 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
   --background: #000000;
   --foreground: #ffffff;
+  --accent-green: #4ade80;
+  --accent-green-dark: #22c55e;
+}
+
+* {
+  box-sizing: border-box;
 }
 
 body {
@@ -10,39 +18,173 @@ body {
   color: var(--foreground);
   font-family: Inter, system-ui, -apple-system, sans-serif;
   overflow: hidden;
+  margin: 0;
+  padding: 0;
 }
 
-/* Custom scrollbar for chat */
+/* Glassmorphism Effects */
+.glass {
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.glass-light {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Custom Scrollbar */
+.scrollbar-thin {
+  scrollbar-width: thin;
+}
+
+.scrollbar-thumb-green-500\/20 {
+  scrollbar-color: rgba(74, 222, 128, 0.2) transparent;
+}
+
 ::-webkit-scrollbar {
   width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(31, 41, 55, 0.5);
+  background: transparent;
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #4ade80;
+  background: rgba(74, 222, 128, 0.3);
   border-radius: 3px;
+  transition: background 0.3s;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #22c55e;
+  background: rgba(74, 222, 128, 0.5);
 }
 
 /* Animations */
 @keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
+  0%, 100% { 
+    transform: translateY(0); 
+  }
+  50% { 
+    transform: translateY(-10px); 
+  }
 }
 
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 20px rgba(74, 222, 128, 0.5); }
-  50% { box-shadow: 0 0 40px rgba(74, 222, 128, 0.8); }
+  0%, 100% { 
+    box-shadow: 0 0 20px rgba(74, 222, 128, 0.5); 
+  }
+  50% { 
+    box-shadow: 0 0 40px rgba(74, 222, 128, 0.8); 
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
 }
 
 /* Three.js Canvas */
 canvas {
   touch-action: none;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Gradient Text */
+.gradient-text {
+  background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Glow Effects */
+.glow-green {
+  filter: drop-shadow(0 0 20px rgba(74, 222, 128, 0.5));
+}
+
+.glow-green-intense {
+  filter: drop-shadow(0 0 40px rgba(74, 222, 128, 0.8));
+}
+
+/* Vignette Effect */
+.vignette {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    circle at center,
+    transparent 30%,
+    rgba(0, 0, 0, 0.7) 70%
+  );
+}
+
+/* Loading Animation */
+.loading-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(74, 222, 128, 0.2),
+    transparent
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* Keyboard Style */
+kbd {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 0.875rem;
+  font-family: monospace;
+}
+
+/* Focus States */
+button:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--accent-green);
+  outline-offset: 2px;
+}
+
+/* Transitions */
+* {
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+/* Disable transitions for color scheme changes */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Mobile Optimizations */
+@media (max-width: 768px) {
+  ::-webkit-scrollbar {
+    width: 3px;
+  }
+  
+  .glass {
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
 }
