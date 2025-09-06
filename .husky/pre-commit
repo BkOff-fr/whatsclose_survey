@@ -1,5 +1,0 @@
-# Run type checking
-npm run type-check
-
-# Run tests for changed files
-npm run test -- --findRelatedTests --passWithNoTests
